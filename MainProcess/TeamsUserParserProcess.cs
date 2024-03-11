@@ -90,7 +90,7 @@ namespace MisterProtypoParser.MainProcess
 
             // connect to GraphApi and get token
             //CreateGraphService()
-            using (var client = GraphServiceClient(_parameters.TenantID, _parameters.ClientID, _parameters.ClientSecret))
+            using (var client = setupClient(_parameters.TenantID, _parameters.ClientID, _parameters.ClientSecret))
             {
 
             }
