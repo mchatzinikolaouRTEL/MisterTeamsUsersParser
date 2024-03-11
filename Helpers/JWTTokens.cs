@@ -1,12 +1,13 @@
-﻿using MisterControlHubApiDto.RequestDtos;
-using MisterControlHubApiDto.ResponceDtos;
+﻿
+using MisterControlHubApiDto.RequestDtos;
+using MisterTeamsUsersParserParser.Models.Dtos;
 using RestSharp;
 using RtelLibrary.Enums;
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json;
 
-namespace MisterProtypoParser.Helpers
+namespace MisterTeamsUsersParserParser.Helpers
 {
     public class JWTTokens
     {
@@ -37,9 +38,9 @@ namespace MisterProtypoParser.Helpers
             {
                 JwtSecurityTokenHandler jwtSecurityTokenHandler = new();
 
-                responceToken = jwtSecurityTokenHandler.ReadJwtToken(JsonSerializer.Deserialize<LoginResponseDto>(response.Content, Program.JsonSerializerOptions)?.Token);
+                responceToken = jwtSecurityTokenHandler.ReadJwtToken(JsonSerializer.Deserialize<AuthTokenResponseDTO>(response.Content, Program.JsonSerializerOptions)?.Token);
                 if (responceToken is null || DateTime.Compare(DateTime.Now, responceToken.ValidTo.AddDays(1)) >= 0)
-                    throw new Exception("Token is null or invlaid");
+                    throw new Exception("Token is null or invalid");
             }
             else throw new Exception($"Responce from: {URL}api/Authentication/Authenticate is not Successful.\n\rBody:\\n\r{JsonSerializer.Serialize(login)}\n\rResponse:\n\r{response.Content}");
 
@@ -51,7 +52,7 @@ namespace MisterProtypoParser.Helpers
 
             switch (sysApplication)
             {
-                case SysApplications.LDAPParser:
+                case SysApplications.MisterTeamsUsersParser:
                 case SysApplications.MisterControlHub:
                     if (misterControlHubApiToken is null || DateTime.Compare(DateTime.Now, misterControlHubApiToken.ValidTo.AddDays(1)) >= 0)
                         misterControlHubApiToken = GetToken(Program.MisterControlHubURL);

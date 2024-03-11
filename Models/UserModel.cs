@@ -13,7 +13,7 @@ namespace MisterTeamsUsersParser.Data.Models
         [Description("businessPhones")]
         public string[] BusinessPhones { get; set; }
         [Description("displayName")]
-        public string DisplayName{ get; set; }
+        public string DisplayName { get; set; }
         [Description("givenName")]
         public string GivenName { get; set; }
         [Description("jobTitle")]

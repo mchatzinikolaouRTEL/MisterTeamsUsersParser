@@ -1,6 +1,6 @@
 ﻿using RtelLibrary.Enums;
 
-namespace MisterProtypoParser
+namespace MisterTeamsUsersParserParser
 {
     partial class MainForm
     {
@@ -31,6 +31,7 @@ namespace MisterProtypoParser
             label12.Visible = false;
             numericLabel12.Visible = false;
         }
+
         private void InitializeNumericLabels(SysApplicationProcess sysApplicationProcess)
         {
             HideAllNumericLabels();
@@ -54,6 +55,24 @@ namespace MisterProtypoParser
                     numericLabel4.NumericText = 0;
                     numericLabel4.Visible = true;                    
                     break;
+                case SysApplicationProcess.MisterTeamsUsersParser:
+                    label1.Text = "Total Records:";
+                    label1.Visible = true;
+                    numericLabel1.NumericText = 0;
+                    numericLabel1.Visible = true;
+                    label2.Text = "Moved Records:";
+                    label2.Visible = true;
+                    numericLabel2.NumericText = 0;
+                    numericLabel2.Visible = true;
+                    label3.Text = "Deleted Records:";
+                    label3.Visible = true;
+                    numericLabel3.NumericText = 0;
+                    numericLabel3.Visible = true;
+                    label4.Text = "Error Records:";
+                    label4.Visible = true;
+                    numericLabel4.NumericText = 0;
+                    numericLabel4.Visible = true;
+                    break;
             }
         }
 
@@ -62,6 +81,7 @@ namespace MisterProtypoParser
             switch (sysApplicationProcess)
             {
                 case SysApplicationProcess.ReplicateLDAPData:
+                case SysApplicationProcess.MisterTeamsUsersParser:
                     numericLabel1.NumericText += i;
                     break;
             }            
@@ -72,6 +92,7 @@ namespace MisterProtypoParser
             switch (sysApplicationProcess)
             {
                 case SysApplicationProcess.ReplicateLDAPData:
+                case SysApplicationProcess.MisterTeamsUsersParser:
                     numericLabel2.NumericText += i;
                     break;
             }
@@ -82,6 +103,7 @@ namespace MisterProtypoParser
             switch (sysApplicationProcess)
             {
                 case SysApplicationProcess.ReplicateLDAPData:
+                case SysApplicationProcess.MisterTeamsUsersParser:
                     numericLabel3.NumericText += i;
                     break;
             }
@@ -92,6 +114,7 @@ namespace MisterProtypoParser
             switch (sysApplicationProcess)
             {
                 case SysApplicationProcess.ReplicateLDAPData:
+                case SysApplicationProcess.MisterTeamsUsersParser:
                     numericLabel4.NumericText += i;
                     break;
             }

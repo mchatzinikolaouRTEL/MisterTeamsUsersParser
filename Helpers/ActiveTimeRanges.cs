@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MisterProtypoParser.Helpers
+namespace MisterTeamsUsersParserParser.Helpers
 {
     public class ActiveTimeRanges
     {

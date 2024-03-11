@@ -2,26 +2,28 @@ using Dapper;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using MisterProtypoParser.Helpers;
+using MisterTeamsUsersParserParser.Helpers;
 using RtelConfigurationLibrary;
 using RtelEncryptionLibrary;
 using RtelLibrary.Enums;
+using RtelLibrary.TableModels;
 using RtelLogException;
 using RtelLogger;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using static MisterProtypoParser.Helpers.Enums;
+using static MisterTeamsUsersParserParser.Helpers.Enums;
 
-namespace MisterProtypoParser
+namespace MisterTeamsUsersParserParser
 {
     static class Program
     {
         //Instruction: Change sysApplication
-        public const SysApplications sysApplication = SysApplications.Unknown;
+        public const SysApplications sysApplication = SysApplications.MisterTeamsUsersParser;
         public readonly static Logger Logger;
         public readonly static Settings settings;
         public readonly static JWTTokens jwtTokens;
@@ -30,6 +32,14 @@ namespace MisterProtypoParser
         public readonly static string RtelApiUserName;
         public readonly static string RtelAPiPassword;
         public readonly static string MisterControlHubURL;
+        
+        //New code
+        
+        public readonly static Parameters programParameters;
+        private static Dictionary<SysApplicationProcess, List<SysParameters>> processParameters = new();
+        private static Dictionary<SysApplicationProcess, List<SysParametersDetails>> processParameterDetails = new();
+        //-------------------
+
         public readonly static JsonSerializerOptions JsonSerializerOptions = new()
         {
             UnknownTypeHandling = JsonUnknownTypeHandling.JsonNode,
@@ -61,6 +71,8 @@ namespace MisterProtypoParser
                     throw new Exception("Decrypt Rtel Api UserName failed");
                 if (x.DecryptString(ref RtelAPiPassword) == RtelEncryption.EncryptionStatus.Error)
                     throw new Exception("Decrypt Rtel APi Password failed");
+                if (x.DecryptString(ref MisterControlHubURL) == RtelEncryption.EncryptionStatus.Error)
+                    throw new Exception("Decrypt Rtel APi Password failed");
 
                 jwtTokens = new();
 
@@ -77,9 +89,9 @@ namespace MisterProtypoParser
         [STAThread]
         public static async Task Main()
         {
-            // Run with wiindows form or service
+            // Run with windows form or service
             var asService = !(Debugger.IsAttached || Environment.UserInteractive);
-
+            var config = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
 
             if (asService)
             {
@@ -91,7 +103,7 @@ namespace MisterProtypoParser
             });
                 builder.UseEnvironment(environment: asService ? Microsoft.Extensions.Hosting.Environments.Production :
                 Microsoft.Extensions.Hosting.Environments.Development);
-
+                
                 await builder.RunAsServiceAsync();
             }
             else

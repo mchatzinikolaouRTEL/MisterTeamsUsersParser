@@ -1,6 +1,6 @@
 ﻿using RtelLibrary.Enums;
 
-namespace MisterProtypoParser.Helpers
+namespace MisterTeamsUsersParserParser.Helpers
 {
     public class ListBoxItem
     {

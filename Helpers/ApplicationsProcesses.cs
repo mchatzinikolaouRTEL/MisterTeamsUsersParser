@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 
-namespace MisterProtypoParser.Helpers
+namespace MisterTeamsUsersParserParser.Helpers
 {
     public static class ApplicationsProcesses
     {
@@ -20,7 +20,7 @@ namespace MisterProtypoParser.Helpers
             string SysApplicationsURL;
             switch (Program.sysApplication)
             {
-                case SysApplications.LDAPParser:
+                case SysApplications.MisterTeamsUsersParser:
                 case SysApplications.MisterControlHub:
                     SysApplicationsURL = Program.MisterControlHubURL;
                     break;
@@ -54,15 +54,16 @@ namespace MisterProtypoParser.Helpers
 
         public static void UpdateApplicationsProcess(SysApplicationsProcesses sysApplicationsProcess)
         {
-            //TODO: Dublicate code
+            //TODO: Duplicate code
             string SysApplicationsURL;
             switch (Program.sysApplication)
             {
-                case SysApplications.LDAPParser:
+                case SysApplications.MisterTeamsUsersParser:
                 case SysApplications.MisterControlHub:
                     SysApplicationsURL = Program.MisterControlHubURL;
                     break;
-                default: throw new Exception("Unknown Application");
+                default: 
+                    throw new Exception("Unknown Application");
             }
 
             //Get application Parameters
@@ -102,7 +103,7 @@ namespace MisterProtypoParser.Helpers
             string SysApplicationsURL;
             switch (Program.sysApplication)
             {
-                case SysApplications.LDAPParser:
+                case SysApplications.MisterTeamsUsersParser:
                 case SysApplications.MisterControlHub:
                     SysApplicationsURL = Program.MisterControlHubURL;
                     break;
@@ -141,7 +142,7 @@ namespace MisterProtypoParser.Helpers
             string SysApplicationsURL;
             switch (Program.sysApplication)
             {
-                case SysApplications.LDAPParser:
+                case SysApplications.MisterTeamsUsersParser:
                 case SysApplications.MisterControlHub:
                     SysApplicationsURL = Program.MisterControlHubURL;
                     break;
@@ -179,7 +180,7 @@ namespace MisterProtypoParser.Helpers
 
         public static bool CheckIfApplicationsProcessCanRun(int ID)
         {
-            //Check if application must run only once per date and if so check if allready run for the day
+            //Check if application must run only once per date and if so check if already run for the day
             if ((_applicationsProcesses[ID].RunOncePerDay ?? false) && 
                 (_applicationsProcesses[ID].ProcessStatus == (int)ProcessStatus.ProcessFinish) &&
                 (_applicationsProcesses[ID].UpdateDatetime.Date.CompareTo(DateTime.Now.Date) == 0) )

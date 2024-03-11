@@ -11,7 +11,7 @@ using RtelLogger;
 using System.Diagnostics;
 using RtelLogException;
 
-namespace MisterProtypoParser
+namespace MisterTeamsUsersParserParser
 {
     public class ServiceBaseLifeTime : ServiceBase, IHostLifetime
     {

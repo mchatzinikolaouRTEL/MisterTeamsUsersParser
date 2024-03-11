@@ -1,22 +1,28 @@
-﻿using MisterProtypoParser.Helpers;
+﻿using MisterControlHubApiDto.RequestDtos;
+using MisterTeamsUsersParser.MainProcess;
+using MisterTeamsUsersParserParser.Helpers;
+using MisterTeamsUsersParserParser.MainProcess;
+using RestSharp;
 using RtelLibrary.Enums;
 using RtelLibrary.TableModels;
 using RtelLogException;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics;
 using System.Drawing;
+using System.IdentityModel.Tokens.Jwt;
 using System.Reflection;
 using System.Security.Principal;
 using System.ServiceProcess;
 using System.Threading;
 using System.Windows.Forms;
 
-namespace MisterProtypoParser
+namespace MisterTeamsUsersParserParser
 {
     public partial class MainForm : Form
     {
-        private const string ServiceName = "MisterLDAPParserService";
+        private const string ServiceName = "TeamsUsersParserService";
         readonly System.Windows.Forms.Timer serviceCheckTimer = new ();
         //TODO: double code
         private Dictionary<SysApplicationProcess, List<SysParameters>> processParameters = new();
@@ -256,7 +262,6 @@ namespace MisterProtypoParser
             {
                 CheckServiceStatus();
             }
-            
         }
 
         private void StopstartAutoCheckToolStripMenuItem_Click(object sender, EventArgs e)
@@ -278,10 +283,12 @@ namespace MisterProtypoParser
             serviceCheckTimer.Start();
         }
 
-        private void ReplicateLDAPDataButton_Click(object sender, EventArgs e)
+        private void TeamsUsersParsingProcess(object sender,EventArgs e)
         {
-            string folderPath = AppDomain.CurrentDomain.BaseDirectory;
-            string Logspath = $"{folderPath}Service.Logs.txt";
+            Parameters.GetParameters(SysApplicationProcess.MisterTeamsUsersParser, ref processParameters, ref processParameterDetails);
+            Parameters parameters = new(processParameters[SysApplicationProcess.MisterTeamsUsersParser], processParameterDetails[SysApplicationProcess.MisterTeamsUsersParser], SysApplicationProcess.MisterTeamsUsersParser);
+
+            new ParseTeamsUsersProcess(parameters).MainProcess();
         }
     }
 }

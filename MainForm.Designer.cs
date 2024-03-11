@@ -1,7 +1,7 @@
 ﻿
-using MisterProtypoParser.Helpers;
+using MisterTeamsUsersParserParser.Helpers;
 
-namespace MisterProtypoParser
+namespace MisterTeamsUsersParserParser
 {
     partial class MainForm
     {
@@ -59,7 +59,7 @@ namespace MisterProtypoParser
             this.label3 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
-            this.ReplicateLDAPDataButton = new System.Windows.Forms.Button();
+            this.ParseTeamsUsersButton = new System.Windows.Forms.Button();
             this.LogsListBox = new System.Windows.Forms.ListBox();
             this.bottomPanel = new System.Windows.Forms.Panel();
             this.serviceInfoPanel.SuspendLayout();
@@ -340,16 +340,16 @@ namespace MisterProtypoParser
             this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.label1.Visible = false;
             // 
-            // ReplicateLDAPDataButton
+            // Parse Team users button
             // 
-            this.ReplicateLDAPDataButton.AutoSize = true;
-            this.ReplicateLDAPDataButton.Location = new System.Drawing.Point(6, 3);
-            this.ReplicateLDAPDataButton.Name = "ReplicateLDAPDataButton";
-            this.ReplicateLDAPDataButton.Size = new System.Drawing.Size(124, 25);
-            this.ReplicateLDAPDataButton.TabIndex = 4;
-            this.ReplicateLDAPDataButton.Text = "Process Button 01";
-            this.ReplicateLDAPDataButton.UseVisualStyleBackColor = true;
-            this.ReplicateLDAPDataButton.Click += new System.EventHandler(this.ReplicateLDAPDataButton_Click);
+            this.ParseTeamsUsersButton.AutoSize = true;
+            this.ParseTeamsUsersButton.Location = new System.Drawing.Point(6, 3);
+            this.ParseTeamsUsersButton.Name = "ParseTeamsUsersButton";
+            this.ParseTeamsUsersButton.Size = new System.Drawing.Size(124, 25);
+            this.ParseTeamsUsersButton.TabIndex = 4;
+            this.ParseTeamsUsersButton.Text = "Parse Action 01";
+            this.ParseTeamsUsersButton.UseVisualStyleBackColor = true;
+            this.ParseTeamsUsersButton.Click += new System.EventHandler(this.TeamsUsersParsingProcess);
             // 
             // LogsListBox
             // 
@@ -370,7 +370,7 @@ namespace MisterProtypoParser
             // bottomPanel
             // 
             this.bottomPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.bottomPanel.Controls.Add(this.ReplicateLDAPDataButton);
+            this.bottomPanel.Controls.Add(this.ParseTeamsUsersButton);
             this.bottomPanel.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.bottomPanel.Location = new System.Drawing.Point(283, 303);
             this.bottomPanel.Name = "bottomPanel";
@@ -417,7 +417,7 @@ namespace MisterProtypoParser
         private System.Windows.Forms.ListBox LogsListBox;
         private System.Windows.Forms.ToolStripMenuItem checkNowToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem stopstartAutoCheckToolStripMenuItem;
-        private System.Windows.Forms.Button ReplicateLDAPDataButton;
+        private System.Windows.Forms.Button ParseTeamsUsersButton;
         private System.Windows.Forms.Panel bottomPanel;
         private System.Windows.Forms.Label label1;
         private NumericLabel numericLabel1;

@@ -5,20 +5,20 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 
-namespace MisterProtypoParser.Helpers
+namespace MisterTeamsUsersParserParser.Helpers
 {
     public partial record Parameters
     {
         //TODO: we don't check if responce IsSuccessful 
         public static void GetParameters(
             SysApplicationProcess sysApplicationProcess, 
-            ref Dictionary<SysApplicationProcess, List<SysParameters>> processParameters, 
+            ref Dictionary<SysApplicationProcess, List<SysParameters>> processParameters,
             ref Dictionary<SysApplicationProcess, List<SysParametersDetails>> processParameterDetails)
         {
             string SysApplicationsURL;
             switch (Program.sysApplication)
             {
-                case SysApplications.LDAPParser:
+                case SysApplications.MisterTeamsUsersParser:
                 case SysApplications.MisterControlHub:
                     SysApplicationsURL = Program.MisterControlHubURL;
                     break;
@@ -42,10 +42,12 @@ namespace MisterProtypoParser.Helpers
             };
 
             request = new RestRequest(Method.GET);
-            request.AddHeader("Authorization", $"Bearer {JWTTokens.GetToken(Program.sysApplication).RawData}");
+            var token = JWTTokens.GetToken(Program.sysApplication).RawData;
+            request.AddHeader("Authorization", $"Bearer {token}");
             response = client.Execute(request);
             processParameters[sysApplicationProcess] = JsonSerializer.Deserialize<List<SysParameters>>(response.Content, Program.JsonSerializerOptions);
-            processParameters[sysApplicationProcess].AddRange(parentPrameters);
+            //Removed, i don't know why.
+            //processParameters[sysApplicationProcess].AddRange(parentPrameters);
 
             //Get application Parameters details
             client = new RestClient($"{SysApplicationsURL}api/Parameter/application/{Program.sysApplication}/Details")
@@ -56,7 +58,7 @@ namespace MisterProtypoParser.Helpers
             request.AddHeader("Authorization", $"Bearer {JWTTokens.GetToken(Program.sysApplication).RawData}");
             response = client.Execute(request);
             List<SysParametersDetails> parentPrametersDetails = JsonSerializer.Deserialize<List<SysParametersDetails>>(response.Content, Program.JsonSerializerOptions);
-
+           
             //Get application process Parameters Details
             client = new RestClient($"{SysApplicationsURL}api/Parameter/applicationprocess/{sysApplicationProcess}/Details")
             {
@@ -68,6 +70,7 @@ namespace MisterProtypoParser.Helpers
             response = client.Execute(request);
             processParameterDetails[sysApplicationProcess] = JsonSerializer.Deserialize<List<SysParametersDetails>>(response.Content, Program.JsonSerializerOptions);
             processParameterDetails[sysApplicationProcess].AddRange(parentPrametersDetails);
+           
         }
     }
 }

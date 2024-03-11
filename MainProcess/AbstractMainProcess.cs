@@ -1,4 +1,4 @@
-﻿using MisterProtypoParser.Helpers;
+﻿using MisterTeamsUsersParserParser.Helpers;
 using RtelLibrary.Enums;
 using RtelLibrary.TableModels;
 using RtelLogException;
@@ -7,7 +7,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MisterProtypoParser.MainProcess
+namespace MisterTeamsUsersParserParser.MainProcess
 {
 
     public abstract class AbstractMainProcess : IMainProcess
@@ -50,7 +50,6 @@ namespace MisterProtypoParser.MainProcess
                         case ProcessStatus.ProcessFinish:
                             _processStatus = ProcessStatus.NotForProcess;
                             break;
-                       
                     }
                 }
             }
@@ -158,7 +157,6 @@ namespace MisterProtypoParser.MainProcess
             }
 
             #region Custom Code here
-
             #endregion
 
             _processStatus = ProcessStatus.ProcessFinish;

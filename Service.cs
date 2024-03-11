@@ -1,7 +1,8 @@
 ﻿using Microsoft.Extensions.Hosting;
 using MisterControlHubApiDto.RequestDtos;
-using MisterProtypoParser.Helpers;
-using MisterProtypoParser.MainProcess;
+using MisterTeamsUsersParser.MainProcess;
+using MisterTeamsUsersParserParser.Helpers;
+using MisterTeamsUsersParserParser.MainProcess;
 using RtelLibrary.Enums;
 using RtelLibrary.TableModels;
 using RtelLogException;
@@ -11,7 +12,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MisterProtypoParser
+namespace MisterTeamsUsersParserParser
 {
     public class Service : IHostedService, IDisposable
     {
@@ -39,13 +40,13 @@ namespace MisterProtypoParser
 
             try
             {
-                processParameters.Add(SysApplicationProcess.ReplicateLDAPData, new());
-                Parameters.GetParameters(SysApplicationProcess.ReplicateLDAPData, ref processParameters, ref processParameterDetails);
-                Parameters parameters = new(processParameters[SysApplicationProcess.ReplicateLDAPData], processParameterDetails[SysApplicationProcess.ReplicateLDAPData], SysApplicationProcess.ReplicateLDAPData);
+                processParameters.Add(SysApplicationProcess.MisterTeamsUsersParser, new());
+                Parameters.GetParameters(SysApplicationProcess.MisterTeamsUsersParser, ref processParameters, ref processParameterDetails);
+                Parameters parameters = new(processParameters[SysApplicationProcess.MisterTeamsUsersParser], processParameterDetails[SysApplicationProcess.MisterTeamsUsersParser], SysApplicationProcess.MisterTeamsUsersParser);
                 mainProcesses.Add(
-                    SysApplicationProcess.ReplicateLDAPData,
-                    new TeamsUserParserProcess(parameters)
-                    );
+                    SysApplicationProcess.MisterTeamsUsersParser,
+                    new ParseTeamsUsersProcess(parameters)
+                    ); 
 
                 Thread ThreatStarter = new Thread(new ThreadStart(() => Synchroniser(_synchroniseModeEnable, Statics.GetProperDateTime("##:#0:00"))));
                 ThreatStarter.Start();
@@ -80,7 +81,6 @@ namespace MisterProtypoParser
                             Thread ThreatStarter = new(new ThreadStart(() => mainProcesses[sysApplicationProcess].Start()));
                             ThreatStarter.Start();
                             break;
-
                     }
                 }
             }

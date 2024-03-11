@@ -2,7 +2,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace MisterProtypoParser.MainProcess
+namespace MisterTeamsUsersParserParser.MainProcess
 {
     public interface IMainProcess
     {        

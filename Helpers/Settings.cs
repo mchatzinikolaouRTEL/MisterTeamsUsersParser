@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MisterProtypoParser.Helpers
+namespace MisterTeamsUsersParserParser.Helpers
 {
     public sealed class Settings
     {
@@ -14,5 +14,7 @@ namespace MisterProtypoParser.Helpers
         public string DefaultCulture { get; set; }
         public string DefaultNumericCulture { get; set; }
         public string ConnectionString { get; set; }
+
+        //maybe add MisterControlHubURL.
     }
 }

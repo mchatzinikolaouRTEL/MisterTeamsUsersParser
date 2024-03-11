@@ -1,9 +1,33 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
 
-namespace MisterProtypoParser.Helpers
+namespace MisterTeamsUsersParserParser.Helpers
 {
     public static class Statics
     {
+        public static string Left(string value, int maxLength)
+        {
+            if (string.IsNullOrEmpty(value)) return value;
+            maxLength = Math.Abs(maxLength);
+
+            return (value.Length <= maxLength ? value : value.Substring(0, maxLength));
+        }
+        public static IEnumerable<string> GetEnumDescription<T>(T value)
+        {
+            var Descriptions = new List<string>();
+            var Type = value.GetType();
+            var Name = Enum.GetName(Type, value);
+            var Field = Type.GetField(Name);
+            var FieldAttributes = Field.GetCustomAttributes(typeof(DescriptionAttribute), true);
+            foreach (DescriptionAttribute FieldAttribute in FieldAttributes)
+            {
+                Descriptions.Add(FieldAttribute.Description);
+            }
+            return Descriptions;
+        }//GetEnumDescription
+
         public static TimeSpan GetProperDateTime(string SynchroniseValue)
         {
             DateTime DateTimeNow = DateTime.Now;

@@ -1,6 +1,6 @@
 ﻿using System.Windows.Forms;
 
-namespace MisterProtypoParser.Helpers
+namespace MisterTeamsUsersParserParser.Helpers
 {
     public class NumericLabel : Label
     {
