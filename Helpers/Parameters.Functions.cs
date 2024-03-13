@@ -35,7 +35,7 @@ namespace MisterTeamsUsersParserParser.Helpers
             IRestResponse response = client.Execute(request);
             List<SysParameters> parentPrameters = JsonSerializer.Deserialize<List<SysParameters>>(response.Content, Program.JsonSerializerOptions);
 
-            //Get application process Parameters 
+            //Get application process Parameters
             client = new RestClient($"{SysApplicationsURL}api/Parameter/applicationprocess/{sysApplicationProcess}")
             {
                 Timeout = -1

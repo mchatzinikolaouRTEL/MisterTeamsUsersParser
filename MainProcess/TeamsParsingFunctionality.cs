@@ -1,8 +1,16 @@
-﻿using Dapper;
+﻿using Azure.Identity;
+using Dapper;
+using Microsoft.Graph;
+using Microsoft.Graph.Models;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.VisualBasic.ApplicationServices;
+using MisterControlHubApiDto.RequestDtos;
+using MisterTeamsUsersParser.Data.Models;
+using MisterTeamsUsersParser.MainProcess;
 using MisterTeamsUsersParserParser.Helpers;
 using MisterTeamsUsersParserParser.Models;
 using MisterTeamsUsersParserParser.Models.Dtos;
+using Newtonsoft.Json.Linq;
 using RtelLibrary.Enums;
 using RtelLibrary.TableModels;
 using System;
@@ -11,6 +19,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -33,7 +42,7 @@ namespace MisterTeamsUsersParserParser.MainProcess
         private const string Tracks = "Tracks";
 
         #region Enums
-        public enum Applications
+        /*public enum Applications
         {
             [Description("Common App ID")]
             CommonAppID = 0,
@@ -70,7 +79,7 @@ namespace MisterTeamsUsersParserParser.MainProcess
             [Description("Code By Date")]
             CodeByDate = 3,
         }//DataTableMoveAction
-
+        */
         private Guid NewGUID;
 
         public Guid TransactionGuid
@@ -87,6 +96,8 @@ namespace MisterTeamsUsersParserParser.MainProcess
 
         #region SysParameters
         SqlConnection Connection;
+        GraphServiceClient GraphClient;
+        string MetricsConnectionString;
         private string TenantID;
         private string ClientId;
         private string ClientSecret;
@@ -96,15 +107,28 @@ namespace MisterTeamsUsersParserParser.MainProcess
         private string Scope;
         #endregion
 
-        internal TeamsParsingFunctionality(Parameters parameters)
+        internal TeamsParsingFunctionality(Parameters parameters,string metricsConnectionString= "Data Source=SQL-SRV01-RTEL;database=Mister_Metrics;User Id=Mister_Metrics;Password=m1st3RL0g!n;")
         {
             NewGUID = Guid.NewGuid();
-            Connection=new SqlConnection(Program.ConnectionString);
-            Connection.Open();
             UnpackSysParameters(parameters);
-
-            Connection.Close();
+            MetricsConnectionString = metricsConnectionString;
+            GraphClient= SetupClient(TenantID, ClientId, ClientSecret);
         }//TeamsParsingFunctionality
+
+        public async void ParseTeamsUsers()
+        {
+            int parsedUsers=0;
+            var graphUserList = await GetGraphUsers(GraphClient);
+            var databaseUserList = GetDatabaseUserUPNS(MetricsConnectionString);
+
+            foreach (var graphUser in graphUserList)
+            {
+                if (databaseUserList.Where(x => x.Equals(graphUser.UserPrincipalName)).IsNullOrEmpty())
+                {
+                    parsedUsers+=InsertUserIntoDatabase(MetricsConnectionString, graphUser);
+                }
+            }
+        }//ParseTeamsUsers
 
         void UnpackSysParameters(Parameters parameters)
         {
@@ -114,36 +138,95 @@ namespace MisterTeamsUsersParserParser.MainProcess
             {
                 sysParameter.ParamName = sysParameter.ParamName.ToLower();
             }
-            /*
-            //Single values.
-            DataTablesRetentionPeriod = Convert.ToInt32(sysParameters.Where(x => x.ParamName == "DataTablesRetentionPeriod".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
-            DataTablesRetentionPeriodMode = Convert.ToInt32(sysParameters.Where(x => x.ParamName == "DataTablesRetentionPeriodMode".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
-            MonthlyDataTableCreateMetaDataAction = (DataTableCreateMetaDataAction)Convert.ToInt32(sysParameters.Where(x => x.ParamName == "MonthlyDataTableCreateMetaDataAction".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
-            MonthlyDataTableMoveAction = (DataTableMoveAction)Convert.ToInt32(sysParameters.Where(x => x.ParamName == "MonthlyDataTableMoveAction".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
-            MonthlyDataTablesCreateMetadataProcedure = Convert.ToString(sysParameters.Where(x => x.ParamName == "MonthlyDataTablesCreateMetadataProcedure".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
-            MonthlyDataTablesMoveProcedure = Convert.ToString(sysParameters.Where(x => x.ParamName == "MonthlyDataTablesMoveProcedure".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
-            MonthlyDataTablesRetentionPeriod = Convert.ToInt32(sysParameters.Where(x => x.ParamName == "MonthlyDataTablesRetentionPeriod".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
-            MonthlyFoldersDestinationPath = Convert.ToString(sysParameters.Where(x => x.ParamName == "MonthlyFoldersDestinationPath".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
-            MonthlyFoldersParseExactPattern = Convert.ToString(sysParameters.Where(x => x.ParamName == "MonthlyFoldersParseExactPattern".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
-            MonthlyFoldersRetentionPeriod = Convert.ToInt32(sysParameters.Where(x => x.ParamName == "MonthlyFoldersRetentionPeriod".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
-            ProcedureToCreateCallsRecorded = Convert.ToString(sysParameters.Where(x => x.ParamName == "ProcedureToCreateCallsRecorded".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
-            ProcedureToCreateNonClosedNormalSessions = Convert.ToString(sysParameters.Where(x => x.ParamName == "ProcedureToCreateNonClosedNormalSessions".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
-            ProcedureToCreateParticipants = Convert.ToString(sysParameters.Where(x => x.ParamName == "ProcedureToCreateParticipants".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
-            ProcedureToCreateSessions = Convert.ToString(sysParameters.Where(x => x.ParamName == "ProcedureToCreateSessions".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
-            ProcedureToCreateTracks = Convert.ToString(sysParameters.Where(x => x.ParamName == "ProcedureToCreateTracks".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
-            StorageDataConnectionString = Convert.ToString(sysParameters.Where(x => x.ParamName == "StorageDataConnectionString".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
-            StorageDataName = Convert.ToString(sysParameters.Where(x => x.ParamName == "StorageDataName".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
+            TenantID = Convert.ToString(sysParameters.Where(x => x.ParamName == "TenantID".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
+            ClientId = Convert.ToString(sysParameters.Where(x => x.ParamName == "ClientId".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
+            ClientSecret = Convert.ToString(sysParameters.Where(x => x.ParamName == "ClientSecret".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
+            CommandTimeout = Convert.ToInt32(sysParameters.Where(x => x.ParamName == "CommandTimeout".ToLower()).Select(x => x.ParamValue).FirstOrDefault()); ;
+            dbMaintenanceMode= Convert.ToBoolean(sysParameters.Where(x => x.ParamName == "dbMaintenanceMode".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
+            ExeDebugMode =Convert.ToBoolean(sysParameters.Where(x => x.ParamName == "ExeDebugMode".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
+            Scope= Convert.ToString(sysParameters.Where(x => x.ParamName == "Scope".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
 
-            //Lists.
-            
-            
-            DataTablesRetentionPeriodPerTable = new();
-            foreach (var sysParameter in sysParameters.FindAll(x => x.ParamName.Contains("DataTablesRetentionPeriodPerTable".ToLower())))
-            {
-                DataTablesRetentionPeriodPerTable.Add(Convert.ToInt32(sysParameter.ParamValue));
-            }
-            */
         }//UnpackSysParameters
-        
+
+        private List<string> GetDatabaseUserUPNS(string MetricsConnectionString)
+        {
+            List<string> result=new();
+            using (var MetricsConnection= new SqlConnection(MetricsConnectionString))
+            {
+                var cmd = new SqlCommand("SELECT userPrincipalName FROM [Mister_Metrics].[dbo].[MG_UsersInformation]", MetricsConnection);
+                cmd.CommandType = CommandType.Text;
+                MetricsConnection.Open();
+                using (SqlDataReader objReader = cmd.ExecuteReader())
+                {
+                    if (objReader.HasRows)
+                    {
+                        while (objReader.Read())
+                        {
+                            string item = objReader.GetString(objReader.GetOrdinal("userPrincipalName"));
+                            result.Add(item);
+                        }
+                    }
+                }
+            }
+            return result;
+        }//GetDatabaseUserUPNS
+
+        private int InsertUserIntoDatabase(string MetricsConnectionString, Microsoft.Graph.Models.User user)
+        {
+            var connection = new SqlConnection(MetricsConnectionString);
+            connection.Open();
+            var command = connection.CreateCommand();
+
+            
+            command.CommandText = @"INSERT INTO [MG_UsersInformation]
+                                (UserName,userPrincipalName,surname,preferredLanguage,officeLocation,mobilePhone,mail,jobTitle,givenName,DisplayName) 
+                                VALUES(@DisplayName,@UserPrincipalName,@Surname,@PreferredLanguage,@OfficeLocation,@MobilePhone,@Mail,@JobTitle,@GivenName,@DisplayName);"
+            ;
+            command.CommandText = $@"INSERT INTO [MG_UsersInformation] ({COLUMNS}) VALUES ({VALUES})";
+
+            command.Parameters.AddWithValue("@DisplayName", user.DisplayName);
+            command.Parameters.AddWithValue("@UserPrincipalName", user.UserPrincipalName);
+            command.Parameters.AddWithValue("@Surname", user.Surname);
+            command.Parameters.AddWithValue("@PreferredLanguage", user.PreferredLanguage);
+            command.Parameters.AddWithValue("@OfficeLocation", user.OfficeLocation);
+            command.Parameters.AddWithValue("@MobilePhone", user.MobilePhone);
+            command.Parameters.AddWithValue("@Mail", user.Mail);
+            command.Parameters.AddWithValue("@JobTitle", user.JobTitle);
+            command.Parameters.AddWithValue("@GivenName", user.GivenName);
+            int rowsChanged= command.ExecuteNonQuery();
+            connection.Close();
+            return rowsChanged;
+        }//InsertUserIntoDatabase
+
+        private async Task<List<Microsoft.Graph.Models.User>> GetGraphUsers(GraphServiceClient graphClient)
+        {
+            try
+            {
+                var users = await graphClient.Users.GetAsync();
+                return users?.Value;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                return new();
+            }
+        }//InsertUserIntoDatabase
+
+        GraphServiceClient SetupClient(string TenantID, string ClientID, string ClientSecret)
+        {
+            // The client credentials flow requires default scope
+            var scopes = new[] { "https://graph.microsoft.com/.default" }; //change this to a parameter
+
+            // using Azure.Identity;
+            var options = new TokenCredentialOptions
+            {
+                AuthorityHost = AzureAuthorityHosts.AzurePublicCloud
+            };
+            var clientSecretCredential = new ClientSecretCredential(
+                TenantID, ClientID, ClientSecret, options);
+            GraphServiceClient newClient = new GraphServiceClient(clientSecretCredential, scopes);
+
+            return newClient;
+        }//SetupClient
     }
 }
