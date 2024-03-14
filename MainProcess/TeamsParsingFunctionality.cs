@@ -172,8 +172,7 @@ namespace MisterTeamsUsersParserParser.MainProcess
             }
             result.Add("UpdateDateTime", $"'{DateTime.Now}'");
             return result;
-        }
-
+        }//QueryPreparation
 
         private int InsertUserIntoDatabase(string MetricsConnectionString, Microsoft.Graph.Models.User user)
         {
@@ -208,8 +207,7 @@ namespace MisterTeamsUsersParserParser.MainProcess
             int rowsChanged = command.ExecuteNonQuery();
             connection.Close();
             return rowsChanged;
-        }
-
+        }//UpdateUserOnDatabase
 
         private async Task<List<Microsoft.Graph.Models.User>> GetGraphUsers(GraphServiceClient graphClient)
         {
@@ -223,7 +221,7 @@ namespace MisterTeamsUsersParserParser.MainProcess
                 Console.WriteLine(e.Message);
                 return new();
             }
-        }//InsertUserIntoDatabase
+        }//GetGraphUsers
 
         GraphServiceClient SetupClient(string TenantID, string ClientID, string ClientSecret)
         {
