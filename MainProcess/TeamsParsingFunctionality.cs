@@ -34,44 +34,6 @@ namespace MisterTeamsUsersParserParser.MainProcess
     {
 
         #region Enums
-        /*public enum Applications
-        {
-            [Description("Common App ID")]
-            CommonAppID = 0,
-            [Description("App ID")]
-            AppID = 20070,
-            [Description("Main App ID")]
-            MainAppID = 20000,
-            [Description("Service ID")]
-            ServiceID = 20071,
-        }//Applications
-
-        public enum ApplicationEntities
-        {
-            [Description("ApplicationEntities")]
-            applicationEntities = 0,
-        }//ApplicationEntities
-
-        public enum DataTableCreateMetaDataAction
-        {
-            [Description("Procedure")]
-            Procedure = 1,
-            [Description("Code Same DataTable")]
-            CodeSameDataTable = 2,
-            [Description("Code MetaData DataTable")]
-            CodeMetaDataDataTable = 3,
-        }//DataTableCreateMetaDataAction
-
-        public enum DataTableMoveAction
-        {
-            [Description("Procedure")]
-            Procedure = 1,
-            [Description("Code")]
-            Code = 2,
-            [Description("Code By Date")]
-            CodeByDate = 3,
-        }//DataTableMoveAction
-        */
         private Guid NewGUID;
 
         public Guid TransactionGuid
