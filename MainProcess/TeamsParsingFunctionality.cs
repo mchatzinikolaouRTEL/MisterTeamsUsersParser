@@ -182,22 +182,7 @@ namespace MisterTeamsUsersParserParser.MainProcess
             var command = connection.CreateCommand();
 
             var queryDictionary = QueryPreparation(user, ForInsert:true);
-            /*
-            //insert into ... (dictionary.keys) values (@+dictionary.values)
-            command.CommandText = @"INSERT INTO [MG_UsersInformation]
-                                (UserName,userPrincipalName,surname,preferredLanguage,officeLocation,mobilePhone,mail,jobTitle,givenName,DisplayName) 
-                                VALUES(@DisplayName,@UserPrincipalName,@Surname,@PreferredLanguage,@OfficeLocation,@MobilePhone,@Mail,@JobTitle,@GivenName,@DisplayName);"
-            ;
-            command.Parameters.AddWithValue("@DisplayName", user.DisplayName);
-            command.Parameters.AddWithValue("@UserPrincipalName", user.UserPrincipalName);
-            command.Parameters.AddWithValue("@Surname", user.Surname);
-            command.Parameters.AddWithValue("@PreferredLanguage", user.PreferredLanguage);
-            command.Parameters.AddWithValue("@OfficeLocation", user.OfficeLocation);
-            command.Parameters.AddWithValue("@MobilePhone", user.MobilePhone);
-            command.Parameters.AddWithValue("@Mail", user.Mail);
-            command.Parameters.AddWithValue("@JobTitle", user.JobTitle);
-            command.Parameters.AddWithValue("@GivenName", user.GivenName);
-            */
+           
             command.CommandText = $@"INSERT INTO [MG_UsersInformation] 
                                             (InsertUserId,UpdateUserId,{String.Join(',',queryDictionary.Keys)}) 
                                      VALUES (0,0,{String.Join(',',queryDictionary.Values)});";
@@ -216,33 +201,6 @@ namespace MisterTeamsUsersParserParser.MainProcess
             connection.Open();
             var command = connection.CreateCommand();
 
-            //update .... set item=value ektos tou upn
-            /*
-            command.CommandText = @"UPDATE [MG_UsersInformation]
-                              SET
-                                UserName=@DisplayName,
-                                surname=@Surname,
-                                preferredLanguage=@PreferredLanguage,
-                                officeLocation=@OfficeLocation,
-                                mobilePhone=@MobilePhone,
-                                mail=@Mail,
-                                jobTitle=@JobTitle,
-                                givenName=@GivenName,
-                                DisplayName=@DisplayName
-                             WHERE
-                                userPrincipalName=@UserPrincipalName"
-            ;
-
-            command.Parameters.AddWithValue("@DisplayName", user.DisplayName);
-            command.Parameters.AddWithValue("@UserPrincipalName", user.UserPrincipalName);
-            command.Parameters.AddWithValue("@Surname", user.Surname);
-            command.Parameters.AddWithValue("@PreferredLanguage", user.PreferredLanguage);
-            command.Parameters.AddWithValue("@OfficeLocation", user.OfficeLocation);
-            command.Parameters.AddWithValue("@MobilePhone", user.MobilePhone);
-            command.Parameters.AddWithValue("@Mail", user.Mail);
-            command.Parameters.AddWithValue("@JobTitle", user.JobTitle);
-            command.Parameters.AddWithValue("@GivenName", user.GivenName);
-            */
             command.CommandText = @$"UPDATE [MG_UsersInformation]
                               SET   UpdateUserID=0,{String.Join(',',queryDictionary.Select(x=>$"{x.Key}={x.Value}"))}
                               WHERE userPrincipalName='{user.UserPrincipalName}' OR RecordID='{user.Id}';";
