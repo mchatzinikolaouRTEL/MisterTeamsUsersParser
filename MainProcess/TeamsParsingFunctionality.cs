@@ -5,6 +5,7 @@ using Microsoft.Graph.Models;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.VisualBasic.ApplicationServices;
 using MisterControlHubApiDto.RequestDtos;
+using MisterControlHubApiDto.ResponceDtos;
 using MisterTeamsUsersParser.Data.Models;
 using MisterTeamsUsersParser.MainProcess;
 using MisterTeamsUsersParserParser.Helpers;
@@ -31,15 +32,6 @@ namespace MisterTeamsUsersParserParser.MainProcess
 {
     internal class TeamsParsingFunctionality
     {
-        private const string ArgumentMonthlyDataTable = "MonthlyDataTable";
-        private const string ArgumentMonthlyFolder = "MonthlyFolder";
-        private const string Mister_Recording = "Mister_Recording";
-
-        private const string CallsRecorded = "CallsRecorded";
-        private const string NonClosedNormalSessions = "NonClosedNormalSessions";
-        private const string Participants = "Participants";
-        private const string Sessions = "Sessions";
-        private const string Tracks = "Tracks";
 
         #region Enums
         /*public enum Applications
@@ -97,7 +89,7 @@ namespace MisterTeamsUsersParserParser.MainProcess
         #region SysParameters
         SqlConnection Connection;
         GraphServiceClient GraphClient;
-        string MetricsConnectionString;
+        string MisterMetricsConnectionString;
         private string TenantID;
         private string ClientId;
         private string ClientSecret;
@@ -107,11 +99,11 @@ namespace MisterTeamsUsersParserParser.MainProcess
         private string Scope;
         #endregion
 
-        internal TeamsParsingFunctionality(Parameters parameters,string metricsConnectionString= "Data Source=SQL-SRV01-RTEL;database=Mister_Metrics;User Id=Mister_Metrics;Password=m1st3RL0g!n;")
+        internal TeamsParsingFunctionality(Parameters parameters)
         {
             NewGUID = Guid.NewGuid();
             UnpackSysParameters(parameters);
-            MetricsConnectionString = metricsConnectionString;
+            MisterMetricsConnectionString = Program.ConnectionString;
             GraphClient= SetupClient(TenantID, ClientId, ClientSecret);
         }//TeamsParsingFunctionality
 
@@ -119,13 +111,17 @@ namespace MisterTeamsUsersParserParser.MainProcess
         {
             int parsedUsers=0;
             var graphUserList = await GetGraphUsers(GraphClient);
-            var databaseUserList = GetDatabaseUserUPNS(MetricsConnectionString);
+            var databaseUserList = GetDatabaseUserUPNS(MisterMetricsConnectionString);
 
             foreach (var graphUser in graphUserList)
             {
                 if (databaseUserList.Where(x => x.Equals(graphUser.UserPrincipalName)).IsNullOrEmpty())
                 {
-                    parsedUsers+=InsertUserIntoDatabase(MetricsConnectionString, graphUser);
+                    parsedUsers+=InsertUserIntoDatabase(MisterMetricsConnectionString, graphUser);
+                }
+                else
+                {
+                    parsedUsers += UpdateUserOnDatabase(MisterMetricsConnectionString, graphUser);
                 }
             }
         }//ParseTeamsUsers
@@ -145,7 +141,6 @@ namespace MisterTeamsUsersParserParser.MainProcess
             dbMaintenanceMode= Convert.ToBoolean(sysParameters.Where(x => x.ParamName == "dbMaintenanceMode".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
             ExeDebugMode =Convert.ToBoolean(sysParameters.Where(x => x.ParamName == "ExeDebugMode".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
             Scope= Convert.ToString(sysParameters.Where(x => x.ParamName == "Scope".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
-
         }//UnpackSysParameters
 
         private List<string> GetDatabaseUserUPNS(string MetricsConnectionString)
@@ -171,18 +166,110 @@ namespace MisterTeamsUsersParserParser.MainProcess
             return result;
         }//GetDatabaseUserUPNS
 
+        Dictionary<string,string> QueryPreparation(Microsoft.Graph.Models.User user,bool ForInsert)
+        {
+            Dictionary<string,string> result = new ();
+            
+            if (user.DisplayName != null)
+            {
+                result.Add("UserName",$"'{user.DisplayName}'");
+                result.Add("DisplayName", $"'{user.DisplayName}'");
+            }
+            if (user.Surname != null)
+            {
+                result.Add("Surname", $"'{user.Surname}'");
+            }
+            if (user.PreferredLanguage != null){
+                result.Add("preferredLanguage", $"'{user.PreferredLanguage}'");
+            }
+            if (user.OfficeLocation != null)
+            {
+                result.Add("officeLocation", $"'{user.OfficeLocation}'");
+            }
+            if (user.MobilePhone != null)
+            {
+                result.Add("mobilePhone", $"'{user.MobilePhone}'");
+            }
+            if (user.Mail != null)
+            {
+                result.Add("mail", $"'{user.Mail}'");
+            }
+            if (user.JobTitle != null)
+            {
+                result.Add("jobTitle", $"'{user.JobTitle}'");
+            }
+            if (user.GivenName != null)
+            {
+                result.Add("givenName", $"'{user.GivenName}'");
+            }
+            if (ForInsert)
+            {
+                result.Add("userPrincipalName", $"'{user.UserPrincipalName}'");
+                result.Add("RecordID", $"'{user.Id}'");
+                result.Add("InsertDateTime", $"'{DateTime.Now}'");
+            }
+            result.Add("UpdateDateTime", $"'{DateTime.Now}'");
+            return result;
+        }
+
+
         private int InsertUserIntoDatabase(string MetricsConnectionString, Microsoft.Graph.Models.User user)
         {
             var connection = new SqlConnection(MetricsConnectionString);
             connection.Open();
             var command = connection.CreateCommand();
 
-            
+            var queryDictionary = QueryPreparation(user, ForInsert:true);
+            /*
+            //insert into ... (dictionary.keys) values (@+dictionary.values)
             command.CommandText = @"INSERT INTO [MG_UsersInformation]
                                 (UserName,userPrincipalName,surname,preferredLanguage,officeLocation,mobilePhone,mail,jobTitle,givenName,DisplayName) 
                                 VALUES(@DisplayName,@UserPrincipalName,@Surname,@PreferredLanguage,@OfficeLocation,@MobilePhone,@Mail,@JobTitle,@GivenName,@DisplayName);"
             ;
-            command.CommandText = $@"INSERT INTO [MG_UsersInformation] ({COLUMNS}) VALUES ({VALUES})";
+            command.Parameters.AddWithValue("@DisplayName", user.DisplayName);
+            command.Parameters.AddWithValue("@UserPrincipalName", user.UserPrincipalName);
+            command.Parameters.AddWithValue("@Surname", user.Surname);
+            command.Parameters.AddWithValue("@PreferredLanguage", user.PreferredLanguage);
+            command.Parameters.AddWithValue("@OfficeLocation", user.OfficeLocation);
+            command.Parameters.AddWithValue("@MobilePhone", user.MobilePhone);
+            command.Parameters.AddWithValue("@Mail", user.Mail);
+            command.Parameters.AddWithValue("@JobTitle", user.JobTitle);
+            command.Parameters.AddWithValue("@GivenName", user.GivenName);
+            */
+            command.CommandText = $@"INSERT INTO [MG_UsersInformation] 
+                                            (InsertUserId,UpdateUserId,{String.Join(',',queryDictionary.Keys)}) 
+                                     VALUES (0,0,{String.Join(',',queryDictionary.Values)});";
+
+            int rowsChanged= command.ExecuteNonQuery();
+            connection.Close();
+            return rowsChanged;
+        }//InsertUserIntoDatabase
+
+
+        private int UpdateUserOnDatabase(string MetricsConnectionString, Microsoft.Graph.Models.User user)
+        {
+            var queryDictionary = QueryPreparation(user,ForInsert:false);
+
+            var connection = new SqlConnection(MetricsConnectionString);
+            connection.Open();
+            var command = connection.CreateCommand();
+
+            //update .... set item=value ektos tou upn
+            /*
+            command.CommandText = @"UPDATE [MG_UsersInformation]
+                              SET
+                                UserName=@DisplayName,
+                                surname=@Surname,
+                                preferredLanguage=@PreferredLanguage,
+                                officeLocation=@OfficeLocation,
+                                mobilePhone=@MobilePhone,
+                                mail=@Mail,
+                                jobTitle=@JobTitle,
+                                givenName=@GivenName,
+                                DisplayName=@DisplayName
+                             WHERE
+                                userPrincipalName=@UserPrincipalName"
+            ;
 
             command.Parameters.AddWithValue("@DisplayName", user.DisplayName);
             command.Parameters.AddWithValue("@UserPrincipalName", user.UserPrincipalName);
@@ -193,10 +280,16 @@ namespace MisterTeamsUsersParserParser.MainProcess
             command.Parameters.AddWithValue("@Mail", user.Mail);
             command.Parameters.AddWithValue("@JobTitle", user.JobTitle);
             command.Parameters.AddWithValue("@GivenName", user.GivenName);
-            int rowsChanged= command.ExecuteNonQuery();
+            */
+            command.CommandText = @$"UPDATE [MG_UsersInformation]
+                              SET   UpdateUserID=0,{String.Join(',',queryDictionary.Select(x=>$"{x.Key}={x.Value}"))}
+                              WHERE userPrincipalName='{user.UserPrincipalName}' OR RecordID='{user.Id}';";
+
+            int rowsChanged = command.ExecuteNonQuery();
             connection.Close();
             return rowsChanged;
-        }//InsertUserIntoDatabase
+        }
+
 
         private async Task<List<Microsoft.Graph.Models.User>> GetGraphUsers(GraphServiceClient graphClient)
         {
