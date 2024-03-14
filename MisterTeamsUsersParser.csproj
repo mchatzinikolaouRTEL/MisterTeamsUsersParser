@@ -18,7 +18,7 @@
     <PackageReference Include="RtelConfigurationLibrary" Version="1.0.2" />
     <PackageReference Include="RtelEncryptionLibrary" Version="1.0.1" />
     <PackageReference Include="RtelHelpers" Version="1.0.2" />
-    <PackageReference Include="RtelLibrary" Version="2.0.50" />
+    <PackageReference Include="RtelLibrary" Version="2.0.51" />
     <PackageReference Include="RtelLogException" Version="1.0.1" />
     <PackageReference Include="RtelLogger" Version="1.0.8" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.4.0" />
