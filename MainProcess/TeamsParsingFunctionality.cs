@@ -75,15 +75,18 @@ namespace MisterTeamsUsersParserParser.MainProcess
             var graphUserList = await GetGraphUsers(GraphClient);
             var databaseUserList = GetDatabaseUserUPNS(MisterMetricsConnectionString);
 
+            //Reset users for deletionReasons.
+            int rows_affected=ResetAllUsers();
+
             foreach (var graphUser in graphUserList)
             {
                 if (databaseUserList.Where(x => x.Equals(graphUser.UserPrincipalName)).IsNullOrEmpty())
                 {
-                    parsedUsers+=InsertUserIntoDatabase(MisterMetricsConnectionString, graphUser);
+                    parsedUsers+=InsertUserIntoDatabase(graphUser);
                 }
                 else
                 {
-                    parsedUsers += UpdateUserOnDatabase(MisterMetricsConnectionString, graphUser);
+                    parsedUsers += UpdateUserOnDatabase(graphUser);
                 }
             }
         }//ParseTeamsUsers
@@ -128,6 +131,21 @@ namespace MisterTeamsUsersParserParser.MainProcess
             return result;
         }//GetDatabaseUserUPNS
 
+        private int ResetAllUsers()
+        {
+            int rows_affected = 0;
+            using (var connection = new SqlConnection(MisterMetricsConnectionString))
+            {
+                connection.Open();
+                var command = connection.CreateCommand();
+                //Soft Delete
+                command.CommandText = "Update [MG_UsersInformation] set Deleted=1";
+                rows_affected=command.ExecuteNonQuery();
+                connection.Close();
+            }
+            return rows_affected;
+        }//ResetAllUsers
+
         Dictionary<string,string> QueryPreparation(Microsoft.Graph.Models.User user,bool ForInsert)
         {
             Dictionary<string,string> result = new ();
@@ -164,27 +182,34 @@ namespace MisterTeamsUsersParserParser.MainProcess
             {
                 result.Add("givenName", $"'{user.GivenName}'");
             }
-            if (ForInsert)
+            if (user.UserPrincipalName != null)
             {
                 result.Add("userPrincipalName", $"'{user.UserPrincipalName}'");
+            }
+            if (ForInsert)
+            {
                 result.Add("RecordID", $"'{user.Id}'");
                 result.Add("InsertDateTime", $"'{DateTime.Now}'");
+                result.Add("InsertUserID", "0");
             }
+
+            result.Add("Deleted", "0");
             result.Add("UpdateDateTime", $"'{DateTime.Now}'");
+            result.Add("UpdateUserID", "0");
             return result;
         }//QueryPreparation
 
-        private int InsertUserIntoDatabase(string MetricsConnectionString, Microsoft.Graph.Models.User user)
+        private int InsertUserIntoDatabase(Microsoft.Graph.Models.User user)
         {
-            var connection = new SqlConnection(MetricsConnectionString);
+            var connection = new SqlConnection(MisterMetricsConnectionString);
             connection.Open();
             var command = connection.CreateCommand();
 
             var queryDictionary = QueryPreparation(user, ForInsert:true);
            
             command.CommandText = $@"INSERT INTO [MG_UsersInformation] 
-                                            (InsertUserId,UpdateUserId,{String.Join(',',queryDictionary.Keys)}) 
-                                     VALUES (0,0,{String.Join(',',queryDictionary.Values)});";
+                                            ({String.Join(',',queryDictionary.Keys)}) 
+                                     VALUES ({String.Join(',',queryDictionary.Values)});";
 
             int rowsChanged= command.ExecuteNonQuery();
             connection.Close();
@@ -192,17 +217,17 @@ namespace MisterTeamsUsersParserParser.MainProcess
         }//InsertUserIntoDatabase
 
 
-        private int UpdateUserOnDatabase(string MetricsConnectionString, Microsoft.Graph.Models.User user)
+        private int UpdateUserOnDatabase(Microsoft.Graph.Models.User user)
         {
             var queryDictionary = QueryPreparation(user,ForInsert:false);
 
-            var connection = new SqlConnection(MetricsConnectionString);
+            var connection = new SqlConnection(MisterMetricsConnectionString);
             connection.Open();
             var command = connection.CreateCommand();
 
             command.CommandText = @$"UPDATE [MG_UsersInformation]
-                              SET   UpdateUserID=0,{String.Join(',',queryDictionary.Select(x=>$"{x.Key}={x.Value}"))}
-                              WHERE userPrincipalName='{user.UserPrincipalName}' OR RecordID='{user.Id}';";
+                              SET   {String.Join(',',queryDictionary.Select(x=>$"{x.Key}={x.Value}"))}
+                              WHERE RecordID='{user.Id}';";
 
             int rowsChanged = command.ExecuteNonQuery();
             connection.Close();
