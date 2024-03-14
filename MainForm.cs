@@ -20,20 +20,21 @@ using System.Windows.Forms;
 
 namespace MisterTeamsUsersParserParser
 {
+    
     public partial class MainForm : Form
     {
-        private const string ServiceName = "TeamsUsersParserService";
+        private const string ServiceName = "MisterMetricsTeamsUsersParserService";
         readonly System.Windows.Forms.Timer serviceCheckTimer = new ();
         //TODO: double code
         private Dictionary<SysApplicationProcess, List<SysParameters>> processParameters = new();
         private Dictionary<SysApplicationProcess, List<SysParametersDetails>> processParameterDetails = new();
-
+        private const int SERVICE_CHECK_INTERVAL = 10 * 1000;
         public MainForm()
         {
             InitializeComponent();
             LogsListBox.DisplayMember = "Text";
             LogsListBox.ValueMember = "EventLevel";
-            serviceCheckTimer.Interval = (60 * 1000);
+            serviceCheckTimer.Interval = SERVICE_CHECK_INTERVAL;
             serviceCheckTimer.Tick += ServiceCheckTimer_Tick;
             serviceCheckTimer.Enabled = false;
             ApplicationsProcesses.SetMainForm(this);
