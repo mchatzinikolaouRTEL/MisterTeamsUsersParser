@@ -12,6 +12,7 @@ using MisterTeamsUsersParserParser.Helpers;
 using MisterTeamsUsersParserParser.Models;
 using MisterTeamsUsersParserParser.Models.Dtos;
 using Newtonsoft.Json.Linq;
+using RtelEncryptionLibrary;
 using RtelLibrary.Enums;
 using RtelLibrary.TableModels;
 using System;
@@ -66,13 +67,13 @@ namespace MisterTeamsUsersParserParser.MainProcess
             NewGUID = Guid.NewGuid();
             UnpackSysParameters(parameters);
             MisterMetricsConnectionString = Program.ConnectionString;
-            GraphClient= SetupClient(TenantID, ClientId, ClientSecret);
+            SetupClient(TenantID, ClientId, ClientSecret);
         }//TeamsParsingFunctionality
 
         public async void ParseTeamsUsers()
         {
             int parsedUsers=0;
-            var graphUserList = await GetGraphUsers(GraphClient);
+            var graphUserList = await GetGraphUsers();
             var databaseUserList = GetDatabaseUserUPNS(MisterMetricsConnectionString);
 
             //Reset users for deletionReasons.
@@ -89,24 +90,56 @@ namespace MisterTeamsUsersParserParser.MainProcess
                     parsedUsers += UpdateUserOnDatabase(graphUser);
                 }
             }
+
         }//ParseTeamsUsers
 
         void UnpackSysParameters(Parameters parameters)
         {
             //Unbox.
-            List<SysParameters> sysParameters = parameters.SysParameters.ToList();
-            foreach(SysParameters sysParameter in sysParameters)
+            if (parameters != null)
             {
-                sysParameter.ParamName = sysParameter.ParamName.ToLower();
+                List<SysParameters> sysParameters = parameters.SysParameters.ToList();
+                foreach (SysParameters sysParameter in sysParameters)
+                {
+                    sysParameter.ParamName = sysParameter.ParamName.ToLower();
+                }
+                TenantID = Convert.ToString(sysParameters.Where(x => x.ParamName == "TenantID".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
+                ClientId = Convert.ToString(sysParameters.Where(x => x.ParamName == "ClientId".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
+                ClientSecret = Convert.ToString(sysParameters.Where(x => x.ParamName == "ClientSecret".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
+                CommandTimeout = Convert.ToInt32(sysParameters.Where(x => x.ParamName == "CommandTimeout".ToLower()).Select(x => x.ParamValue).FirstOrDefault()); ;
+                dbMaintenanceMode = Convert.ToBoolean(sysParameters.Where(x => x.ParamName == "dbMaintenanceMode".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
+                ExeDebugMode = Convert.ToBoolean(sysParameters.Where(x => x.ParamName == "ExeDebugMode".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
+                Scope = Convert.ToString(sysParameters.Where(x => x.ParamName == "Scope".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
             }
-            TenantID = Convert.ToString(sysParameters.Where(x => x.ParamName == "TenantID".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
-            ClientId = Convert.ToString(sysParameters.Where(x => x.ParamName == "ClientId".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
-            ClientSecret = Convert.ToString(sysParameters.Where(x => x.ParamName == "ClientSecret".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
-            CommandTimeout = Convert.ToInt32(sysParameters.Where(x => x.ParamName == "CommandTimeout".ToLower()).Select(x => x.ParamValue).FirstOrDefault()); ;
-            dbMaintenanceMode= Convert.ToBoolean(sysParameters.Where(x => x.ParamName == "dbMaintenanceMode".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
-            ExeDebugMode =Convert.ToBoolean(sysParameters.Where(x => x.ParamName == "ExeDebugMode".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
-            Scope= Convert.ToString(sysParameters.Where(x => x.ParamName == "Scope".ToLower()).Select(x => x.ParamValue).FirstOrDefault());
+            //Here read the sysParameters.
+            else
+            {
+                var Decryptor= new RtelEncryption();
+                var sysParams = SQL_Helpers.GetSysParameters();
+
+                foreach (var x in sysParams)
+                {
+                    if (x.ParamValueIsEncrypted)
+                    {
+                        string temp = x.ParamValue;
+                        if (Decryptor.DecryptString(ref temp) == RtelEncryption.EncryptionStatus.Error)
+                            throw new Exception("Decrypt failed");
+                        x.ParamValue = temp;
+                    }
+                }
+
+                TenantID=sysParams.Where(x=>x.ParamName=="TenantID").First().ParamValue;
+                ClientId=sysParams.Where(x =>x.ParamName=="ClientId").First().ParamValue;
+                ClientSecret=sysParams.Where(x=>x.ParamName=="ClientSecret").First().ParamValue;
+                CommandTimeout=Convert.ToInt32(sysParams.Where(x=>x.ParamName=="CommandTimeout").First().ParamValue);
+                dbMaintenanceMode=Convert.ToBoolean(sysParams.Where(x=>x.ParamName=="dbMaintenanceMode").First().ParamValue);
+                ExeDebugMode=Convert.ToBoolean(sysParams.Where(x=>x.ParamName=="ExeDebugMode").First().ParamValue);
+                Scope =sysParams.Where(x=>x.ParamName== "Scope").First().ParamValue;
+
+            }
+
         }//UnpackSysParameters
+
 
         private List<string> GetDatabaseUserUPNS(string MetricsConnectionString)
         {
@@ -234,11 +267,11 @@ namespace MisterTeamsUsersParserParser.MainProcess
             return rowsChanged;
         }//UpdateUserOnDatabase
 
-        private async Task<List<Microsoft.Graph.Models.User>> GetGraphUsers(GraphServiceClient graphClient)
+        private async Task<List<Microsoft.Graph.Models.User>> GetGraphUsers()
         {
             try
             {
-                var users = await graphClient.Users.GetAsync();
+                var users = await GraphClient.Users.GetAsync();
                 return users?.Value;
             }
             catch (Exception e)
@@ -248,21 +281,27 @@ namespace MisterTeamsUsersParserParser.MainProcess
             }
         }//GetGraphUsers
 
-        GraphServiceClient SetupClient(string TenantID, string ClientID, string ClientSecret)
+        private void SetupClient(string TenantID, string ClientID, string ClientSecret)
         {
-            // The client credentials flow requires default scope
-            var scopes = new[] { "https://graph.microsoft.com/.default" }; //change this to a parameter
-
-            // using Azure.Identity;
-            var options = new TokenCredentialOptions
+            try
             {
-                AuthorityHost = AzureAuthorityHosts.AzurePublicCloud
-            };
-            var clientSecretCredential = new ClientSecretCredential(
-                TenantID, ClientID, ClientSecret, options);
-            GraphServiceClient newClient = new GraphServiceClient(clientSecretCredential, scopes);
+                // The client credentials flow requires default scope
+                var scopes = new[] { "https://graph.microsoft.com/.default" }; //change this to a parameter
 
-            return newClient;
+                // using Azure.Identity;
+                var options = new TokenCredentialOptions
+                {
+                    AuthorityHost = AzureAuthorityHosts.AzurePublicCloud
+                };
+                var clientSecretCredential = new ClientSecretCredential(
+                    TenantID, ClientID, ClientSecret, options);
+                GraphClient = new GraphServiceClient(clientSecretCredential, scopes);
+
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
         }//SetupClient
     }
 }

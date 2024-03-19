@@ -71,8 +71,8 @@ namespace MisterTeamsUsersParser.MainProcess
             }
             #region Custom Code here
 
-            var TeamsParser=new TeamsParsingFunctionality(parameters);
-            TeamsParser.ParseTeamsUsers();
+            //var TeamsParser=new TeamsParsingFunctionality(parameters);
+            //TeamsParser.ParseTeamsUsers();
 
             #endregion
             _processStatus = ProcessStatus.ProcessFinish;

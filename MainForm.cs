@@ -286,10 +286,12 @@ namespace MisterTeamsUsersParserParser
 
         private void TeamsUsersParsingProcess(object sender,EventArgs e)
         {
-            Parameters.GetParameters(SysApplicationProcess.MisterTeamsUsersParser, ref processParameters, ref processParameterDetails);
-            Parameters parameters = new(processParameters[SysApplicationProcess.MisterTeamsUsersParser], processParameterDetails[SysApplicationProcess.MisterTeamsUsersParser], SysApplicationProcess.MisterTeamsUsersParser);
+            //Parameters.GetParameters(SysApplicationProcess.MisterTeamsUsersParser, ref processParameters, ref processParameterDetails);
+            //Parameters parameters = new(processParameters[SysApplicationProcess.MisterTeamsUsersParser], processParameterDetails[SysApplicationProcess.MisterTeamsUsersParser], SysApplicationProcess.MisterTeamsUsersParser);
 
-            new ParseTeamsUsersProcess(parameters).MainProcess();
+            //new ParseTeamsUsersProcess(parameters).MainProcess();
+            var TeamsParser = new TeamsParsingFunctionality(null);
+            TeamsParser.ParseTeamsUsers();
         }
     }
 }
